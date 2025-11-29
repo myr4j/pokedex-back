@@ -83,6 +83,14 @@ nb-configuration.xml
 .DS_Store
 
 ##############################
+## Node.js
+##############################
+node_modules/
+package-lock.json
+package.json
+
+##############################
 ## Miscellaneous
 ##############################
 *.log
+.env
