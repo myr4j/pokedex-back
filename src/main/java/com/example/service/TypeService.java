@@ -1,0 +1,45 @@
+package com.example.service;
+
+import com.example.domain.Type;
+import jakarta.ejb.Stateless;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
+import java.util.List;
+
+@Stateless
+public class TypeService {
+
+    @PersistenceContext
+    private EntityManager em;
+
+    public Type createType(String name) {
+        Type type = new Type(name);
+        em.persist(type);
+        return type;
+    }
+
+    public Type findTypeById(Long id) {
+        return em.find(Type.class, id);
+    }
+
+    public List<Type> findAllTypes() {
+        return em.createQuery("SELECT t FROM Type t ORDER BY t.name", Type.class)
+                .getResultList();
+    }
+
+    public Type updateType(Long id, String name) {
+        Type type = findTypeById(id);
+        if (type != null) {
+            type.setName(name);
+            em.merge(type);
+        }
+        return type;
+    }
+
+    public void deleteType(Long id) {
+        Type type = findTypeById(id);
+        if (type != null) {
+            em.remove(type);
+        }
+    }
+}

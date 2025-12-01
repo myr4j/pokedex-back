@@ -2,7 +2,10 @@
              version="2.2">
     <persistence-unit name="starterPU" transaction-type="JTA">
         <jta-data-source>jdbc/starter</jta-data-source>
-        <class>com.example.domain.User</class>
+        <class>com.example.domain.Trainer</class>
+        <class>com.example.domain.Pokemon</class>
+        <class>com.example.domain.Type</class>
+        <class>com.example.domain.CaughtPokemon</class>
 
         <properties>
             <property name="jakarta.persistence.schema-generation.database.action" value="create"/>
