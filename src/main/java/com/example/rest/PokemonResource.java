@@ -1,6 +1,8 @@
 package com.example.rest;
 
 import com.example.domain.Pokemon;
+import com.example.dto.PokemonComparison;
+import com.example.service.PokemonComparisonService;
 import com.example.service.PokemonService;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
@@ -15,6 +17,9 @@ public class PokemonResource {
 
     @Inject
     private PokemonService pokemonService;
+
+    @Inject
+    private PokemonComparisonService pokemonComparisonService;
 
     @POST
     public Response createPokemon(Pokemon pokemon) {
@@ -68,6 +73,18 @@ public class PokemonResource {
     public Response deletePokemon(@PathParam("id") Long id) {
         pokemonService.deletePokemon(id);
         return Response.noContent().build();
+    }
+
+    @POST
+    @Path("/compare")
+    public Response comparePokemons(List<Long> pokemonIds) {
+        try {
+            PokemonComparison comparison = pokemonComparisonService.comparePokemons(pokemonIds);
+            return Response.ok(comparison).build();
+        } catch (IllegalArgumentException e) {
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(e.getMessage()).build();
+        }
     }
 }
 

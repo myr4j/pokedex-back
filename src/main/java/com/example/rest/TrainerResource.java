@@ -1,7 +1,9 @@
 package com.example.rest;
 
 import com.example.domain.Trainer;
+import com.example.dto.TrainerStats;
 import com.example.service.TrainerService;
+import com.example.service.TrainerStatsService;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
@@ -15,6 +17,9 @@ public class TrainerResource {
 
     @Inject
     private TrainerService trainerService;
+
+    @Inject
+    private TrainerStatsService trainerStatsService;
 
     @POST
     public Response createTrainer(Trainer trainer) {
@@ -53,6 +58,18 @@ public class TrainerResource {
     public Response deleteTrainer(@PathParam("id") Long id) {
         trainerService.deleteTrainer(id);
         return Response.noContent().build();
+    }
+
+    @GET
+    @Path("/{id}/stats")
+    public Response getTrainerStats(@PathParam("id") Long id) {
+        try {
+            TrainerStats stats = trainerStatsService.getTrainerStats(id);
+            return Response.ok(stats).build();
+        } catch (IllegalArgumentException e) {
+            return Response.status(Response.Status.NOT_FOUND)
+                    .entity(e.getMessage()).build();
+        }
     }
 }
 
