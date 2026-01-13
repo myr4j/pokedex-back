@@ -6,6 +6,10 @@ import com.example.domain.Trainer;
 import jakarta.ejb.Stateless;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.CriteriaQuery;
+import jakarta.persistence.criteria.Predicate;
+import jakarta.persistence.criteria.Root;
 import java.util.List;
 
 @Stateless
@@ -34,21 +38,37 @@ public class CaughtPokemonService {
         return em.find(CaughtPokemon.class, id);
     }
 
+    public List<CaughtPokemon> findAllCaughtPokemons() {
+        CriteriaBuilder cb = em.getCriteriaBuilder();
+        CriteriaQuery<CaughtPokemon> cq = cb.createQuery(CaughtPokemon.class);
+        Root<CaughtPokemon> root = cq.from(CaughtPokemon.class);
+        cq.select(root);
+        cq.orderBy(cb.desc(root.get("captureDate")));
+        return em.createQuery(cq).getResultList();
+    }
 
     public List<CaughtPokemon> findCaughtPokemonsByTrainer(Long trainerId) {
-        Trainer trainer = em.find(Trainer.class, trainerId);
-        if (trainer != null && trainer.getCaptures() != null) {
-            return trainer.getCaptures();
-        }
-        return new java.util.ArrayList<>();
+        CriteriaBuilder cb = em.getCriteriaBuilder();
+        CriteriaQuery<CaughtPokemon> cq = cb.createQuery(CaughtPokemon.class);
+        Root<CaughtPokemon> root = cq.from(CaughtPokemon.class);
+        
+        Predicate trainerPredicate = cb.equal(root.get("trainer").get("id"), trainerId);
+        cq.where(trainerPredicate);
+        cq.orderBy(cb.desc(root.get("captureDate")));
+        
+        return em.createQuery(cq).getResultList();
     }
 
     public List<CaughtPokemon> findCaughtPokemonsByPokemon(Long pokemonId) {
-        Pokemon pokemon = em.find(Pokemon.class, pokemonId);
-        if (pokemon != null && pokemon.getCaptures() != null) {
-            return pokemon.getCaptures();
-        }
-        return new java.util.ArrayList<>();
+        CriteriaBuilder cb = em.getCriteriaBuilder();
+        CriteriaQuery<CaughtPokemon> cq = cb.createQuery(CaughtPokemon.class);
+        Root<CaughtPokemon> root = cq.from(CaughtPokemon.class);
+        
+        Predicate pokemonPredicate = cb.equal(root.get("pokemon").get("id"), pokemonId);
+        cq.where(pokemonPredicate);
+        cq.orderBy(cb.desc(root.get("captureDate")));
+        
+        return em.createQuery(cq).getResultList();
     }
 
     public void deleteCaughtPokemon(Long id) {

@@ -5,7 +5,12 @@ import com.example.domain.Pokemon;
 import com.example.domain.Trainer;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.TypedQuery;
-import org.junit.jupiter.api.BeforeEach;
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.CriteriaQuery;
+import jakarta.persistence.criteria.Order;
+import jakarta.persistence.criteria.Path;
+import jakarta.persistence.criteria.Predicate;
+import jakarta.persistence.criteria.Root;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -24,6 +29,24 @@ class CaughtPokemonServiceTest {
 
     @Mock
     private EntityManager em;
+
+    @Mock
+    private CriteriaBuilder cb;
+
+    @Mock
+    private CriteriaQuery<CaughtPokemon> cq;
+
+    @Mock
+    private Root<CaughtPokemon> root;
+
+    @Mock
+    private Path<Object> idPath;
+
+    @Mock
+    private Predicate predicate;
+
+    @Mock
+    private Order order;
 
     @Mock
     private TypedQuery<CaughtPokemon> typedQuery;
@@ -143,9 +166,51 @@ class CaughtPokemonServiceTest {
     }
 
     @Test
+    void testFindAllCaughtPokemons() {
+        // Given
+        List<CaughtPokemon> caughtPokemons = new ArrayList<>();
+        Trainer trainer1 = new Trainer("Ash", "ash@pokemon.com");
+        Trainer trainer2 = new Trainer("Misty", "misty@pokemon.com");
+        Pokemon pokemon1 = new Pokemon(25, "Pikachu");
+        Pokemon pokemon2 = new Pokemon(7, "Squirtle");
+        
+        CaughtPokemon cp1 = new CaughtPokemon(trainer1, pokemon1);
+        CaughtPokemon cp2 = new CaughtPokemon(trainer2, pokemon2);
+        caughtPokemons.add(cp1);
+        caughtPokemons.add(cp2);
+
+        when(em.getCriteriaBuilder()).thenReturn(cb);
+        when(cb.createQuery(CaughtPokemon.class)).thenReturn(cq);
+        when(cq.from(CaughtPokemon.class)).thenReturn(root);
+        when(cq.select(root)).thenReturn(cq);
+        when(root.get(anyString())).thenReturn(idPath);
+        when(cb.desc(any())).thenReturn(order);
+        when(cq.orderBy(any(Order.class))).thenReturn(cq);
+        when(em.createQuery(cq)).thenReturn(typedQuery);
+        when(typedQuery.getResultList()).thenReturn(caughtPokemons);
+
+        // When
+        List<CaughtPokemon> result = caughtPokemonService.findAllCaughtPokemons();
+
+        // Then
+        assertNotNull(result);
+        assertEquals(2, result.size());
+        verify(em, times(1)).getCriteriaBuilder();
+        verify(cb, times(1)).createQuery(CaughtPokemon.class);
+        verify(cq, times(1)).from(CaughtPokemon.class);
+        verify(cq, times(1)).select(root);
+        verify(root, times(1)).get("captureDate");
+        verify(cb, times(1)).desc(idPath);
+        verify(cq, times(1)).orderBy(order);
+        verify(em, times(1)).createQuery(cq);
+        verify(typedQuery, times(1)).getResultList();
+    }
+
+    @Test
     void testFindCaughtPokemonsByTrainer() {
         // Given
         Long trainerId = 1L;
+        List<CaughtPokemon> caughtPokemons = new ArrayList<>();
         Trainer trainer = new Trainer("Ash", "ash@pokemon.com");
         trainer.setId(trainerId);
         Pokemon pokemon1 = new Pokemon(25, "Pikachu");
@@ -153,10 +218,19 @@ class CaughtPokemonServiceTest {
         
         CaughtPokemon cp1 = new CaughtPokemon(trainer, pokemon1);
         CaughtPokemon cp2 = new CaughtPokemon(trainer, pokemon2);
-        trainer.getCaptures().add(cp1);
-        trainer.getCaptures().add(cp2);
+        caughtPokemons.add(cp1);
+        caughtPokemons.add(cp2);
 
-        when(em.find(Trainer.class, trainerId)).thenReturn(trainer);
+        when(em.getCriteriaBuilder()).thenReturn(cb);
+        when(cb.createQuery(CaughtPokemon.class)).thenReturn(cq);
+        when(cq.from(CaughtPokemon.class)).thenReturn(root);
+        when(root.get(anyString())).thenReturn(idPath);
+        when(cb.equal(any(), eq(trainerId))).thenReturn(predicate);
+        when(cq.where(any(Predicate.class))).thenReturn(cq);
+        when(cb.desc(any())).thenReturn(order);
+        when(cq.orderBy(any(Order.class))).thenReturn(cq);
+        when(em.createQuery(cq)).thenReturn(typedQuery);
+        when(typedQuery.getResultList()).thenReturn(caughtPokemons);
 
         // When
         List<CaughtPokemon> result = caughtPokemonService.findCaughtPokemonsByTrainer(trainerId);
@@ -164,14 +238,23 @@ class CaughtPokemonServiceTest {
         // Then
         assertNotNull(result);
         assertEquals(2, result.size());
-        verify(em, times(1)).find(Trainer.class, trainerId);
-        verify(em, never()).createQuery(anyString(), any());
+        verify(em, times(1)).getCriteriaBuilder();
+        verify(cb, times(1)).createQuery(CaughtPokemon.class);
+        verify(cq, times(1)).from(CaughtPokemon.class);
+        verify(root, atLeastOnce()).get(anyString());
+        verify(cb, times(1)).equal(any(), eq(trainerId));
+        verify(cq, times(1)).where(any(Predicate.class));
+        verify(cb, times(1)).desc(any());
+        verify(cq, times(1)).orderBy(any(Order.class));
+        verify(em, times(1)).createQuery(cq);
+        verify(typedQuery, times(1)).getResultList();
     }
 
     @Test
     void testFindCaughtPokemonsByPokemon() {
         // Given
         Long pokemonId = 25L;
+        List<CaughtPokemon> caughtPokemons = new ArrayList<>();
         Trainer trainer1 = new Trainer("Ash", "ash@pokemon.com");
         Trainer trainer2 = new Trainer("Red", "red@pokemon.com");
         Pokemon pokemon = new Pokemon(25, "Pikachu");
@@ -179,10 +262,19 @@ class CaughtPokemonServiceTest {
         
         CaughtPokemon cp1 = new CaughtPokemon(trainer1, pokemon);
         CaughtPokemon cp2 = new CaughtPokemon(trainer2, pokemon);
-        pokemon.getCaptures().add(cp1);
-        pokemon.getCaptures().add(cp2);
+        caughtPokemons.add(cp1);
+        caughtPokemons.add(cp2);
 
-        when(em.find(Pokemon.class, pokemonId)).thenReturn(pokemon);
+        when(em.getCriteriaBuilder()).thenReturn(cb);
+        when(cb.createQuery(CaughtPokemon.class)).thenReturn(cq);
+        when(cq.from(CaughtPokemon.class)).thenReturn(root);
+        when(root.get(anyString())).thenReturn(idPath);
+        when(cb.equal(any(), eq(pokemonId))).thenReturn(predicate);
+        when(cq.where(any(Predicate.class))).thenReturn(cq);
+        when(cb.desc(any())).thenReturn(order);
+        when(cq.orderBy(any(Order.class))).thenReturn(cq);
+        when(em.createQuery(cq)).thenReturn(typedQuery);
+        when(typedQuery.getResultList()).thenReturn(caughtPokemons);
 
         // When
         List<CaughtPokemon> result = caughtPokemonService.findCaughtPokemonsByPokemon(pokemonId);
@@ -190,8 +282,16 @@ class CaughtPokemonServiceTest {
         // Then
         assertNotNull(result);
         assertEquals(2, result.size());
-        verify(em, times(1)).find(Pokemon.class, pokemonId);
-        verify(em, never()).createQuery(anyString(), any());
+        verify(em, times(1)).getCriteriaBuilder();
+        verify(cb, times(1)).createQuery(CaughtPokemon.class);
+        verify(cq, times(1)).from(CaughtPokemon.class);
+        verify(root, atLeastOnce()).get(anyString());
+        verify(cb, times(1)).equal(any(), eq(pokemonId));
+        verify(cq, times(1)).where(any(Predicate.class));
+        verify(cb, times(1)).desc(any());
+        verify(cq, times(1)).orderBy(any(Order.class));
+        verify(em, times(1)).createQuery(cq);
+        verify(typedQuery, times(1)).getResultList();
     }
 
     @Test

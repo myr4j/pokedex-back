@@ -3,7 +3,11 @@ package com.example.service;
 import com.example.domain.Pokemon;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.TypedQuery;
-import org.junit.jupiter.api.BeforeEach;
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.CriteriaQuery;
+import jakarta.persistence.criteria.Order;
+import jakarta.persistence.criteria.Path;
+import jakarta.persistence.criteria.Root;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -22,6 +26,21 @@ class PokemonServiceTest {
 
     @Mock
     private EntityManager em;
+
+    @Mock
+    private CriteriaBuilder cb;
+
+    @Mock
+    private CriteriaQuery<Pokemon> cq;
+
+    @Mock
+    private Root<Pokemon> root;
+
+    @Mock
+    private Path<Object> idPath;
+
+    @Mock
+    private Order order;
 
     @Mock
     private TypedQuery<Pokemon> typedQuery;
@@ -92,7 +111,14 @@ class PokemonServiceTest {
         pokemons.add(p1);
         pokemons.add(p2);
 
-        when(em.createQuery(anyString(), eq(Pokemon.class))).thenReturn(typedQuery);
+        when(em.getCriteriaBuilder()).thenReturn(cb);
+        when(cb.createQuery(Pokemon.class)).thenReturn(cq);
+        when(cq.from(Pokemon.class)).thenReturn(root);
+        when(cq.select(root)).thenReturn(cq);
+        when(root.get(anyString())).thenReturn(idPath);
+        when(cb.asc(any())).thenReturn(order);
+        when(cq.orderBy(any(Order.class))).thenReturn(cq);
+        when(em.createQuery(cq)).thenReturn(typedQuery);
         when(typedQuery.getResultList()).thenReturn(pokemons);
 
         // when
@@ -101,7 +127,13 @@ class PokemonServiceTest {
         // then
         assertNotNull(result);
         assertEquals(2, result.size());
-        verify(em, times(1)).createQuery(anyString(), eq(Pokemon.class));
+        verify(em, times(1)).getCriteriaBuilder();
+        verify(cb, times(1)).createQuery(Pokemon.class);
+        verify(cq, times(1)).from(Pokemon.class);
+        verify(cq, times(1)).select(root);
+        verify(cb, times(1)).asc(any());
+        verify(cq, times(1)).orderBy(any(Order.class));
+        verify(em, times(1)).createQuery(cq);
         verify(typedQuery, times(1)).getResultList();
     }
 

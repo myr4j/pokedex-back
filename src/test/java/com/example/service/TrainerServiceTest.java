@@ -2,10 +2,10 @@ package com.example.service;
 
 import com.example.domain.Trainer;
 import jakarta.persistence.EntityManager;
-import jakarta.persistence.EntityTransaction;
-import jakarta.persistence.Query;
 import jakarta.persistence.TypedQuery;
-import org.junit.jupiter.api.BeforeEach;
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.CriteriaQuery;
+import jakarta.persistence.criteria.Root;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -24,6 +24,15 @@ class TrainerServiceTest {
 
     @Mock
     private EntityManager em;
+
+    @Mock
+    private CriteriaBuilder cb;
+
+    @Mock
+    private CriteriaQuery<Trainer> cq;
+
+    @Mock
+    private Root<Trainer> root;
 
     @Mock
     private TypedQuery<Trainer> typedQuery;
@@ -93,7 +102,11 @@ class TrainerServiceTest {
         trainers.add(new Trainer("Yanis", "yanis@pokemon.com"));
         trainers.add(new Trainer("Rahim", "rahim@pokemon.com"));
 
-        when(em.createQuery(anyString(), eq(Trainer.class))).thenReturn(typedQuery);
+        when(em.getCriteriaBuilder()).thenReturn(cb);
+        when(cb.createQuery(Trainer.class)).thenReturn(cq);
+        when(cq.from(Trainer.class)).thenReturn(root);
+        when(cq.select(root)).thenReturn(cq);
+        when(em.createQuery(cq)).thenReturn(typedQuery);
         when(typedQuery.getResultList()).thenReturn(trainers);
 
         // When
@@ -102,7 +115,11 @@ class TrainerServiceTest {
         // Then
         assertNotNull(result);
         assertEquals(2, result.size());
-        verify(em, times(1)).createQuery(anyString(), eq(Trainer.class));
+        verify(em, times(1)).getCriteriaBuilder();
+        verify(cb, times(1)).createQuery(Trainer.class);
+        verify(cq, times(1)).from(Trainer.class);
+        verify(cq, times(1)).select(root);
+        verify(em, times(1)).createQuery(cq);
         verify(typedQuery, times(1)).getResultList();
     }
 

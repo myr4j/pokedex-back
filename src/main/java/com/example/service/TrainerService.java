@@ -4,6 +4,9 @@ import com.example.domain.Trainer;
 import jakarta.ejb.Stateless;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.CriteriaQuery;
+import jakarta.persistence.criteria.Root;
 import java.util.List;
 
 @Stateless
@@ -23,8 +26,11 @@ public class TrainerService {
     }
 
     public List<Trainer> findAllTrainers() {
-        return em.createQuery("SELECT t FROM Trainer t", Trainer.class)
-                .getResultList();
+        CriteriaBuilder cb = em.getCriteriaBuilder();
+        CriteriaQuery<Trainer> cq = cb.createQuery(Trainer.class);
+        Root<Trainer> root = cq.from(Trainer.class);
+        cq.select(root);
+        return em.createQuery(cq).getResultList();
     }
 
     public Trainer updateTrainer(Long id, String name, String email) {

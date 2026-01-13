@@ -36,6 +36,12 @@ public class CaughtPokemonResource {
     }
 
     @GET
+    public Response getAllCaughtPokemons() {
+        List<CaughtPokemon> caughtPokemons = caughtPokemonService.findAllCaughtPokemons();
+        return Response.ok(caughtPokemons).build();
+    }
+
+    @GET
     @Path("/{id}")
     public Response getCaughtPokemonById(@PathParam("id") Long id) {
         CaughtPokemon caughtPokemon = caughtPokemonService.findCaughtPokemonById(id);

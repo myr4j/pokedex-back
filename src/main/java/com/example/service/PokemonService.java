@@ -4,6 +4,9 @@ import com.example.domain.Pokemon;
 import jakarta.ejb.Stateless;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.CriteriaQuery;
+import jakarta.persistence.criteria.Root;
 import java.util.List;
 
 @Stateless
@@ -27,8 +30,12 @@ public class PokemonService {
     }
 
     public List<Pokemon> findAllPokemons() {
-        return em.createQuery("SELECT p FROM Pokemon p ORDER BY p.pokedexNumber", Pokemon.class)
-                .getResultList();
+        CriteriaBuilder cb = em.getCriteriaBuilder();
+        CriteriaQuery<Pokemon> cq = cb.createQuery(Pokemon.class);
+        Root<Pokemon> root = cq.from(Pokemon.class);
+        cq.select(root);
+        cq.orderBy(cb.asc(root.get("pokedexNumber")));
+        return em.createQuery(cq).getResultList();
     }
 
     public Pokemon updatePokemon(Long id, Integer pokedexNumber, String name, Integer hp, Integer attack, Integer defense, Integer speed) {

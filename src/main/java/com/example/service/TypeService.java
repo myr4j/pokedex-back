@@ -4,6 +4,9 @@ import com.example.domain.Type;
 import jakarta.ejb.Stateless;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.CriteriaQuery;
+import jakarta.persistence.criteria.Root;
 import java.util.List;
 
 @Stateless
@@ -23,8 +26,12 @@ public class TypeService {
     }
 
     public List<Type> findAllTypes() {
-        return em.createQuery("SELECT t FROM Type t ORDER BY t.name", Type.class)
-                .getResultList();
+        CriteriaBuilder cb = em.getCriteriaBuilder();
+        CriteriaQuery<Type> cq = cb.createQuery(Type.class);
+        Root<Type> root = cq.from(Type.class);
+        cq.select(root);
+        cq.orderBy(cb.asc(root.get("name")));
+        return em.createQuery(cq).getResultList();
     }
 
     public Type updateType(Long id, String name) {
