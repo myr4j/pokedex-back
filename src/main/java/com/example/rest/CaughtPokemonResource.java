@@ -1,6 +1,7 @@
 package com.example.rest;
 
 import com.example.domain.CaughtPokemon;
+import com.example.security.Secured;
 import com.example.service.CaughtPokemonService;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
@@ -12,6 +13,7 @@ import java.util.Map;
 @Path("/caught-pokemons")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
+@Secured
 public class CaughtPokemonResource {
 
     @Inject

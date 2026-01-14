@@ -25,11 +25,20 @@ public class Trainer {
     @Column(nullable = false, unique = true)
     private String email;
 
+    @Column(nullable = false)
+    private String password;
+
     @OneToMany(mappedBy = "trainer", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<CaughtPokemon> captures = new ArrayList<>();
 
     public Trainer(String name, String email) {
         this.name = name;
         this.email = email;
+    }
+
+    public Trainer(String name, String email, String password) {
+        this.name = name;
+        this.email = email;
+        this.password = password;
     }
 }

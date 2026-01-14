@@ -2,6 +2,7 @@ package com.example.rest;
 
 import com.example.domain.Trainer;
 import com.example.dto.TrainerStats;
+import com.example.security.Secured;
 import com.example.service.TrainerService;
 import com.example.service.TrainerStatsService;
 import jakarta.inject.Inject;
@@ -13,6 +14,7 @@ import java.util.List;
 @Path("/trainers")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
+@Secured
 public class TrainerResource {
 
     @Inject

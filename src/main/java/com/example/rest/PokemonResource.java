@@ -2,6 +2,7 @@ package com.example.rest;
 
 import com.example.domain.Pokemon;
 import com.example.dto.PokemonComparison;
+import com.example.security.Secured;
 import com.example.service.PokemonComparisonService;
 import com.example.service.PokemonService;
 import jakarta.inject.Inject;
@@ -13,6 +14,7 @@ import java.util.List;
 @Path("/pokemons")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
+@Secured
 public class PokemonResource {
 
     @Inject

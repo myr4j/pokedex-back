@@ -1,6 +1,7 @@
 package com.example.rest;
 
 import com.example.domain.Type;
+import com.example.security.Secured;
 import com.example.service.TypeService;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
@@ -11,6 +12,7 @@ import java.util.List;
 @Path("/types")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
+@Secured
 public class TypeResource {
 
     @Inject
