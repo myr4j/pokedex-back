@@ -29,19 +29,25 @@ post_request() {
     local endpoint=$1
     local data=$2
     local cookie_file=$3
-    local response=$(curl -s -w "\n%{http_code}" -X POST "$BASE_URL$endpoint" \
+    local temp_file=$(mktemp)
+    local http_code=$(curl -s -w "%{http_code}" -o "$temp_file" -X POST "$BASE_URL$endpoint" \
         -H "Content-Type: application/json" \
         -b "$cookie_file" -c "$cookie_file" \
         -d "$data")
-    local body=$(echo "$response" | head -n -1)
-    local status=$(echo "$response" | tail -n 1)
+    local body=$(cat "$temp_file")
+    rm -f "$temp_file"
     echo "$body"
-    return $status
+    echo "$http_code"
 }
 
 # Fonction pour extraire l'ID d'une réponse JSON
 extract_id() {
     echo "$1" | grep -o '"id":[0-9]*' | head -1 | grep -o '[0-9]*'
+}
+
+# Fonction pour extraire trainerId d'une réponse JSON
+extract_trainer_id() {
+    echo "$1" | grep -o '"trainerId":[0-9]*' | head -1 | grep -o '[0-9]*'
 }
 
 # Créer un fichier cookie temporaire
@@ -96,13 +102,22 @@ for i in {0..9}; do
 
     # sinon, tenter l'enregistrement
     response=$(post_request "/auth/register" "{\"name\":\"$name\",\"email\":\"$email\",\"password\":\"$password\"}" "$COOKIE_FILE")
-    trainer_id=$(extract_id "$response")
+    http_status=$(echo "$response" | tail -n 1)
+    body=$(echo "$response" | head -n -1)
+    trainer_id=$(extract_trainer_id "$body")
+    
+    if [ -z "$trainer_id" ]; then
+        trainer_id=$(extract_id "$body")
+    fi
 
-    if [ ! -z "$trainer_id" ]; then
+    if [ ! -z "$trainer_id" ] && [ "$http_status" = "201" ]; then
         TRAINER_IDS+=($trainer_id)
         echo "  ✓ Trainer créé: $name (ID: $trainer_id)"
+    elif [ ! -z "$trainer_id" ]; then
+        TRAINER_IDS+=($trainer_id)
+        echo "  ✓ Trainer trouvé: $name (ID: $trainer_id)"
     else
-        echo "  ✗ Erreur création trainer $name: $response"
+        echo "  ⚠️  Trainer $name non créé (peut-être déjà existant ou erreur)"
     fi
 done
 
@@ -124,13 +139,27 @@ TYPE_IDS=()
 types=("Fire" "Water" "Grass" "Electric" "Psychic" "Ice" "Dragon" "Dark" "Fairy" "Normal")
 for type_name in "${types[@]}"; do
     response=$(post_request "/types" "{\"name\":\"$type_name\"}" "$COOKIE_FILE")
-    type_id=$(extract_id "$response")
+    http_status=$(echo "$response" | tail -n 1)
+    body=$(echo "$response" | head -n -1)
+    type_id=$(extract_id "$body")
 
-    if [ ! -z "$type_id" ]; then
+    if [ ! -z "$type_id" ] && [ "$http_status" = "201" ]; then
         TYPE_IDS+=($type_id)
         echo "  ✓ Type créé: $type_name (ID: $type_id)"
+    elif [ "$http_status" = "500" ] && echo "$body" | grep -q "duplicate key\|already exists"; then
+        # Type existe déjà, essayer de le récupérer via GET
+        existing_type=$(curl -s "$BASE_URL/types" -b "$COOKIE_FILE" | grep -o "\"name\":\"$type_name\".*\"id\":[0-9]*" | grep -o '"id":[0-9]*' | head -1 | grep -o '[0-9]*')
+        if [ ! -z "$existing_type" ]; then
+            TYPE_IDS+=($existing_type)
+            echo "  ✓ Type déjà existant: $type_name (ID: $existing_type)"
+        else
+            echo "  ⚠️  Type $type_name existe mais ID non récupéré"
+        fi
+    elif [ ! -z "$type_id" ]; then
+        TYPE_IDS+=($type_id)
+        echo "  ✓ Type trouvé: $type_name (ID: $type_id)"
     else
-        echo "  ✗ Erreur création type $type_name: $response"
+        echo "  ⚠️  Type $type_name non créé"
     fi
 done
 
@@ -161,13 +190,27 @@ for pokedex_num in "${!pokemons[@]}"; do
     IFS=':' read -r name hp attack defense speed <<< "${pokemons[$pokedex_num]}"
 
     response=$(post_request "/pokemons" "{\"pokedexNumber\":$pokedex_num,\"name\":\"$name\",\"hp\":$hp,\"attack\":$attack,\"defense\":$defense,\"speed\":$speed}" "$COOKIE_FILE")
-    pokemon_id=$(extract_id "$response")
+    http_status=$(echo "$response" | tail -n 1)
+    body=$(echo "$response" | head -n -1)
+    pokemon_id=$(extract_id "$body")
 
-    if [ ! -z "$pokemon_id" ]; then
+    if [ ! -z "$pokemon_id" ] && [ "$http_status" = "201" ]; then
         POKEMON_IDS+=($pokemon_id)
         echo "  ✓ Pokemon créé: $name #$pokedex_num (ID: $pokemon_id)"
+    elif [ "$http_status" = "500" ] && echo "$body" | grep -q "duplicate key\|already exists"; then
+        # Pokemon existe déjà, essayer de le récupérer via GET
+        existing_pokemon=$(curl -s "$BASE_URL/pokemons" -b "$COOKIE_FILE" | grep -o "\"pokedexNumber\":$pokedex_num.*\"id\":[0-9]*" | grep -o '"id":[0-9]*' | head -1 | grep -o '[0-9]*')
+        if [ ! -z "$existing_pokemon" ]; then
+            POKEMON_IDS+=($existing_pokemon)
+            echo "  ✓ Pokemon déjà existant: $name #$pokedex_num (ID: $existing_pokemon)"
+        else
+            echo "  ⚠️  Pokemon $name existe mais ID non récupéré"
+        fi
+    elif [ ! -z "$pokemon_id" ]; then
+        POKEMON_IDS+=($pokemon_id)
+        echo "  ✓ Pokemon trouvé: $name #$pokedex_num (ID: $pokemon_id)"
     else
-        echo "  ✗ Erreur création pokemon $name: $response"
+        echo "  ⚠️  Pokemon $name non créé"
     fi
 done
 
@@ -176,23 +219,28 @@ echo "🎣 Création des captures..."
 CAPTURE_COUNT=0
 
 # Chaque trainer capture quelques pokemons aléatoirement
-for trainer_id in "${TRAINER_IDS[@]}"; do
-    # Chaque trainer capture 2-4 pokemons
-    num_captures=$((RANDOM % 3 + 2))
+if [ ${#POKEMON_IDS[@]} -eq 0 ]; then
+    echo "  ⚠️  Aucun pokemon disponible, impossible de créer des captures"
+else
+    for trainer_id in "${TRAINER_IDS[@]}"; do
+        # Chaque trainer capture 2-4 pokemons
+        num_captures=$((RANDOM % 3 + 2))
 
-    for ((i=0; i<num_captures; i++)); do
-        # Sélectionner un pokemon aléatoire
-        random_index=$((RANDOM % ${#POKEMON_IDS[@]}))
-        pokemon_id=${POKEMON_IDS[$random_index]}
+        for ((i=0; i<num_captures; i++)); do
+            # Sélectionner un pokemon aléatoire
+            random_index=$((RANDOM % ${#POKEMON_IDS[@]}))
+            pokemon_id=${POKEMON_IDS[$random_index]}
 
-        response=$(post_request "/caught-pokemons" "{\"trainerId\":$trainer_id,\"pokemonId\":$pokemon_id}" "$COOKIE_FILE")
-        capture_id=$(extract_id "$response")
+            response=$(post_request "/caught-pokemons" "{\"trainerId\":$trainer_id,\"pokemonId\":$pokemon_id}" "$COOKIE_FILE")
+            body=$(echo "$response" | head -n -1)
+            capture_id=$(extract_id "$body")
 
-        if [ ! -z "$capture_id" ]; then
-            CAPTURE_COUNT=$((CAPTURE_COUNT + 1))
-        fi
+            if [ ! -z "$capture_id" ]; then
+                CAPTURE_COUNT=$((CAPTURE_COUNT + 1))
+            fi
+        done
     done
-done
+fi
 
 echo "  ✓ $CAPTURE_COUNT captures créées"
 
