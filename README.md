@@ -33,7 +33,7 @@ API is available at: `http://localhost:8080/api`
 
 ### 3. Populate database (optional)
 ```bash
-./populate-db.sh http://localhost:8080/api
+./populate-db.sh 
 ```
 
 ## Features
