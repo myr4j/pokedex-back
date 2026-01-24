@@ -1,5 +1,6 @@
 package com.example.domain;
 
+import jakarta.json.bind.annotation.JsonbTransient;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -20,10 +21,12 @@ public class CaughtPokemon {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "trainer_id", nullable = false)
+    @JsonbTransient
     private Trainer trainer;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "pokemon_id", nullable = false)
+    @JsonbTransient
     private Pokemon pokemon;
 
     @Column(nullable = false)

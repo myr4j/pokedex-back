@@ -5,6 +5,4 @@ import jakarta.ws.rs.core.Application;
 
 @ApplicationPath("/api")
 public class ApplicationConfig extends Application {
-    // configuration jax-rs - le serveur detecte automatiquement les ressources
 }
-

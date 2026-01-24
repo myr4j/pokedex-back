@@ -4,6 +4,8 @@ import com.example.domain.Trainer;
 import com.example.dto.AuthResponse;
 import com.example.dto.LoginRequest;
 import com.example.dto.RegisterRequest;
+import com.example.dto.TrainerMessage;
+import com.example.messaging.TrainerMessageProducer;
 import com.example.service.AuthService;
 import jakarta.inject.Inject;
 import jakarta.servlet.http.HttpServletRequest;
@@ -19,6 +21,9 @@ public class AuthResource {
 
     @Inject
     private AuthService authService;
+
+    @Inject
+    private TrainerMessageProducer trainerMessageProducer;
 
     @Context
     private HttpServletRequest httpRequest;
@@ -37,6 +42,14 @@ public class AuthResource {
                     request.getEmail(),
                     request.getPassword()
             );
+
+            // envoyer un message jms pour la creation du trainer
+            TrainerMessage trainerMessage = new TrainerMessage(
+                    trainer.getId(),
+                    trainer.getName(),
+                    trainer.getEmail()
+            );
+            trainerMessageProducer.sendTrainerCreatedMessage(trainerMessage);
 
             AuthResponse response = new AuthResponse(
                     trainer.getId(),
@@ -82,7 +95,7 @@ public class AuthResource {
     @POST
     @Path("/logout")
     public Response logout() {
-        // invalider la session
+        // invalider la session http
         if (httpRequest.getSession(false) != null) {
             httpRequest.getSession().invalidate();
         }

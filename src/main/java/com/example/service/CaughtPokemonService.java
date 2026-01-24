@@ -3,7 +3,10 @@ package com.example.service;
 import com.example.domain.CaughtPokemon;
 import com.example.domain.Pokemon;
 import com.example.domain.Trainer;
+import com.example.dto.CaptureMessage;
+import com.example.messaging.CaptureMessageProducer;
 import jakarta.ejb.Stateless;
+import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.criteria.CriteriaBuilder;
@@ -18,6 +21,9 @@ public class CaughtPokemonService {
     @PersistenceContext
     private EntityManager em;
 
+    @Inject
+    private CaptureMessageProducer captureMessageProducer;
+
     public CaughtPokemon createCaughtPokemon(Long trainerId, Long pokemonId) {
         Trainer trainer = em.find(Trainer.class, trainerId);
         if (trainer == null) {
@@ -31,6 +37,16 @@ public class CaughtPokemonService {
         
         CaughtPokemon caughtPokemon = new CaughtPokemon(trainer, pokemon);
         em.persist(caughtPokemon);
+        
+        // envoyer un message jms pour la capture
+        CaptureMessage captureMessage = new CaptureMessage(
+                trainer.getId(),
+                trainer.getName(),
+                pokemon.getId(),
+                pokemon.getName()
+        );
+        captureMessageProducer.sendCaptureMessage(captureMessage);
+        
         return caughtPokemon;
     }
 

@@ -20,7 +20,7 @@ public class Type {
     private Long id;
 
     @Column(nullable = false, unique = true)
-    private String name; // Ex: "Fire", "Water", "Grass", etc.
+    private String name; // ex: "fire", "water", "grass", etc.
 
     @ManyToMany(mappedBy = "types")
     private List<Pokemon> pokemons = new ArrayList<>();

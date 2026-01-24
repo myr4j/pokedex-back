@@ -1,6 +1,6 @@
 # Pokedex Backend - Jakarta EE
 
-REST API for managing a Pokedex with authentication and endpoint security.
+REST API for managing a Pokedex.
 
 ## Quick Start
 
@@ -55,11 +55,11 @@ API is available at: `http://localhost:8080/api`
 - **GET** `/api/trainers/{id}/stats` - Get trainer statistics
 
 ### Pokémons
-- **POST** `/api/pokemons` - Create a pokémon
-- **GET** `/api/pokemons` - List all pokémons
-- **GET** `/api/pokemons/{id}` - Get pokémon details
-- **PUT** `/api/pokemons/{id}` - Update a pokémon
-- **DELETE** `/api/pokemons/{id}` - Delete a pokémon
+- **POST** `/api/pokemons` - Create a pokemon
+- **GET** `/api/pokemons` - List all pokemons
+- **GET** `/api/pokemons/{id}` - Get pokemon details
+- **PUT** `/api/pokemons/{id}` - Update a pokemon
+- **DELETE** `/api/pokemons/{id}` - Delete a pokemon
 - **POST** `/api/pokemons/compare` - Compare multiple pokémons (stats)
 
 ### Types
@@ -74,7 +74,7 @@ API is available at: `http://localhost:8080/api`
 - **GET** `/api/caught-pokemons` - List all captures
 - **GET** `/api/caught-pokemons/{id}` - Get capture details
 - **GET** `/api/caught-pokemons/trainer/{trainerId}` - Get trainer's captures
-- **GET** `/api/caught-pokemons/pokemon/{pokemonId}` - Get trainers who caught a pokémon
+- **GET** `/api/caught-pokemons/pokemon/{pokemonId}` - Get trainers who caught a pokemon
 - **DELETE** `/api/caught-pokemons/{id}` - Delete a capture
 
 

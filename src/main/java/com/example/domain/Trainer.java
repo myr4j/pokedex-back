@@ -1,5 +1,6 @@
 package com.example.domain;
 
+import jakarta.json.bind.annotation.JsonbTransient;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -26,9 +27,11 @@ public class Trainer {
     private String email;
 
     @Column(nullable = false)
+    @JsonbTransient
     private String password;
 
     @OneToMany(mappedBy = "trainer", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonbTransient
     private List<CaughtPokemon> captures = new ArrayList<>();
 
     public Trainer(String name, String email) {

@@ -13,7 +13,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import java.lang.reflect.Method;
 
-// filtre tres simple qui verifie qu'un trainer est connecte pour les endpoints @Secured
+// filtre tres simple qui verifie qu'un trainer est connecte pour les endpoints @secured
 @Provider
 @Priority(Priorities.AUTHENTICATION)
 public class AuthFilter implements ContainerRequestFilter {
@@ -33,13 +33,13 @@ public class AuthFilter implements ContainerRequestFilter {
         boolean methodSecured = resourceMethod != null && resourceMethod.isAnnotationPresent(Secured.class);
 
         if (!classSecured && !methodSecured) {
-            //  endpoint public
+            // endpoint public, pas besoin de verifier
             return;
         }
 
         HttpSession session = request.getSession(false);
         if (session == null || session.getAttribute("trainerId") == null) {
-            // pas connecte donc 401
+            // pas connecte donc on retourne 401
             requestContext.abortWith(
                     Response.status(Response.Status.UNAUTHORIZED)
                             .entity("authentication required")
