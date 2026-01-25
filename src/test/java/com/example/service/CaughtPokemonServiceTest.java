@@ -3,6 +3,7 @@ package com.example.service;
 import com.example.domain.CaughtPokemon;
 import com.example.domain.Pokemon;
 import com.example.domain.Trainer;
+import com.example.messaging.CaptureMessageProducer;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.TypedQuery;
 import jakarta.persistence.criteria.CriteriaBuilder;
@@ -29,6 +30,9 @@ class CaughtPokemonServiceTest {
 
     @Mock
     private EntityManager em;
+
+    @Mock
+    private CaptureMessageProducer captureMessageProducer;
 
     @Mock
     private CriteriaBuilder cb;
@@ -74,6 +78,7 @@ class CaughtPokemonServiceTest {
             cp.setId(1L);
             return null;
         }).when(em).persist(any(CaughtPokemon.class));
+        doNothing().when(captureMessageProducer).sendCaptureMessage(any());
 
         // When
         CaughtPokemon result = caughtPokemonService.createCaughtPokemon(trainerId, pokemonId);
@@ -86,6 +91,7 @@ class CaughtPokemonServiceTest {
         verify(em, times(1)).find(Trainer.class, trainerId);
         verify(em, times(1)).find(Pokemon.class, pokemonId);
         verify(em, times(1)).persist(any(CaughtPokemon.class));
+        verify(captureMessageProducer, times(1)).sendCaptureMessage(any());
     }
 
     @Test

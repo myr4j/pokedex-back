@@ -39,6 +39,15 @@ post_request() {
     return $status
 }
 
+# Fonction pour faire des requêtes GET avec session
+get_request() {
+    local endpoint=$1
+    local cookie_file=$2
+    curl -s -X GET "$BASE_URL$endpoint" \
+        -H "Content-Type: application/json" \
+        -b "$cookie_file" -c "$cookie_file"
+}
+
 # Fonction pour extraire l'ID d'une réponse JSON
 extract_id() {
     echo "$1" | grep -o '"id":[0-9]*' | head -1 | grep -o '[0-9]*'
@@ -121,22 +130,57 @@ echo ""
 echo "🔴 Création des types..."
 TYPE_IDS=()
 
+# Récupérer les types existants
+existing_types=$(get_request "/types" "$COOKIE_FILE")
+
 types=("Fire" "Water" "Grass" "Electric" "Psychic" "Ice" "Dragon" "Dark" "Fairy" "Normal")
 for type_name in "${types[@]}"; do
-    response=$(post_request "/types" "{\"name\":\"$type_name\"}" "$COOKIE_FILE")
-    type_id=$(extract_id "$response")
-
-    if [ ! -z "$type_id" ]; then
-        TYPE_IDS+=($type_id)
-        echo "  ✓ Type créé: $type_name (ID: $type_id)"
+    # Vérifier si le type existe déjà en cherchant dans la réponse JSON
+    # Format attendu: {"id":X,"name":"TypeName"} ou [{"id":X,"name":"TypeName"},...]
+    existing_id=$(echo "$existing_types" | grep -o "\"name\":\"$type_name\"" | head -1)
+    if [ ! -z "$existing_id" ]; then
+        # Extraire l'ID qui précède le nom dans le JSON
+        existing_id=$(echo "$existing_types" | sed -n "s/.*\"id\":\([0-9]*\).*\"name\":\"$type_name\".*/\1/p" | head -1)
+        if [ -z "$existing_id" ]; then
+            # Essayer l'autre ordre possible
+            existing_id=$(echo "$existing_types" | sed -n "s/.*\"name\":\"$type_name\".*\"id\":\([0-9]*\).*/\1/p" | head -1)
+        fi
+    fi
+    
+    if [ ! -z "$existing_id" ]; then
+        TYPE_IDS+=($existing_id)
+        echo "  ✓ Type déjà existant utilisé: $type_name (ID: $existing_id)"
     else
-        echo "  ✗ Erreur création type $type_name: $response"
+        # Essayer de créer le type
+        response=$(post_request "/types" "{\"name\":\"$type_name\"}" "$COOKIE_FILE")
+        type_id=$(extract_id "$response")
+
+        if [ ! -z "$type_id" ]; then
+            TYPE_IDS+=($type_id)
+            echo "  ✓ Type créé: $type_name (ID: $type_id)"
+        else
+            # Si l'erreur est due à une duplication, récupérer depuis la liste existante mise à jour
+            existing_types=$(get_request "/types" "$COOKIE_FILE")
+            existing_id=$(echo "$existing_types" | sed -n "s/.*\"id\":\([0-9]*\).*\"name\":\"$type_name\".*/\1/p" | head -1)
+            if [ -z "$existing_id" ]; then
+                existing_id=$(echo "$existing_types" | sed -n "s/.*\"name\":\"$type_name\".*\"id\":\([0-9]*\).*/\1/p" | head -1)
+            fi
+            if [ ! -z "$existing_id" ]; then
+                TYPE_IDS+=($existing_id)
+                echo "  ✓ Type déjà existant (récupéré): $type_name (ID: $existing_id)"
+            else
+                echo "  ⚠ Type $type_name existe peut-être déjà (ignoré)"
+            fi
+        fi
     fi
 done
 
 echo ""
 echo "⚡ Création des pokemons..."
 POKEMON_IDS=()
+
+# Récupérer les pokémons existants
+existing_pokemons=$(get_request "/pokemons" "$COOKIE_FILE")
 
 # Liste de pokemons avec leurs stats
 declare -A pokemons=(
@@ -160,14 +204,42 @@ declare -A pokemons=(
 for pokedex_num in "${!pokemons[@]}"; do
     IFS=':' read -r name hp attack defense speed <<< "${pokemons[$pokedex_num]}"
 
-    response=$(post_request "/pokemons" "{\"pokedexNumber\":$pokedex_num,\"name\":\"$name\",\"hp\":$hp,\"attack\":$attack,\"defense\":$defense,\"speed\":$speed}" "$COOKIE_FILE")
-    pokemon_id=$(extract_id "$response")
-
-    if [ ! -z "$pokemon_id" ]; then
-        POKEMON_IDS+=($pokemon_id)
-        echo "  ✓ Pokemon créé: $name #$pokedex_num (ID: $pokemon_id)"
+    # Vérifier si le pokémon existe déjà par son pokedexNumber
+    existing_id=$(echo "$existing_pokemons" | grep -o "\"pokedexNumber\":$pokedex_num" | head -1)
+    if [ ! -z "$existing_id" ]; then
+        # Extraire l'ID qui correspond à ce pokedexNumber
+        existing_id=$(echo "$existing_pokemons" | sed -n "s/.*\"id\":\([0-9]*\).*\"pokedexNumber\":$pokedex_num.*/\1/p" | head -1)
+        if [ -z "$existing_id" ]; then
+            # Essayer l'autre ordre possible
+            existing_id=$(echo "$existing_pokemons" | sed -n "s/.*\"pokedexNumber\":$pokedex_num.*\"id\":\([0-9]*\).*/\1/p" | head -1)
+        fi
+    fi
+    
+    if [ ! -z "$existing_id" ]; then
+        POKEMON_IDS+=($existing_id)
+        echo "  ✓ Pokemon déjà existant utilisé: $name #$pokedex_num (ID: $existing_id)"
     else
-        echo "  ✗ Erreur création pokemon $name: $response"
+        # Essayer de créer le pokémon
+        response=$(post_request "/pokemons" "{\"pokedexNumber\":$pokedex_num,\"name\":\"$name\",\"hp\":$hp,\"attack\":$attack,\"defense\":$defense,\"speed\":$speed}" "$COOKIE_FILE")
+        pokemon_id=$(extract_id "$response")
+
+        if [ ! -z "$pokemon_id" ]; then
+            POKEMON_IDS+=($pokemon_id)
+            echo "  ✓ Pokemon créé: $name #$pokedex_num (ID: $pokemon_id)"
+        else
+            # Si l'erreur est due à une duplication, récupérer depuis la liste existante mise à jour
+            existing_pokemons=$(get_request "/pokemons" "$COOKIE_FILE")
+            existing_id=$(echo "$existing_pokemons" | sed -n "s/.*\"id\":\([0-9]*\).*\"pokedexNumber\":$pokedex_num.*/\1/p" | head -1)
+            if [ -z "$existing_id" ]; then
+                existing_id=$(echo "$existing_pokemons" | sed -n "s/.*\"pokedexNumber\":$pokedex_num.*\"id\":\([0-9]*\).*/\1/p" | head -1)
+            fi
+            if [ ! -z "$existing_id" ]; then
+                POKEMON_IDS+=($existing_id)
+                echo "  ✓ Pokemon déjà existant (récupéré): $name #$pokedex_num (ID: $existing_id)"
+            else
+                echo "  ⚠ Pokemon $name #$pokedex_num existe peut-être déjà (ignoré)"
+            fi
+        fi
     fi
 done
 
@@ -175,26 +247,30 @@ echo ""
 echo "🎣 Création des captures..."
 CAPTURE_COUNT=0
 
-# Chaque trainer capture quelques pokemons aléatoirement
-for trainer_id in "${TRAINER_IDS[@]}"; do
-    # Chaque trainer capture 2-4 pokemons
-    num_captures=$((RANDOM % 3 + 2))
+# Vérifier qu'on a des pokémons avant de créer des captures
+if [ ${#POKEMON_IDS[@]} -eq 0 ]; then
+    echo "  ⚠ Aucun pokemon disponible, impossible de créer des captures"
+else
+    # Chaque trainer capture quelques pokemons aléatoirement
+    for trainer_id in "${TRAINER_IDS[@]}"; do
+        # Chaque trainer capture 2-4 pokemons
+        num_captures=$((RANDOM % 3 + 2))
 
-    for ((i=0; i<num_captures; i++)); do
-        # Sélectionner un pokemon aléatoire
-        random_index=$((RANDOM % ${#POKEMON_IDS[@]}))
-        pokemon_id=${POKEMON_IDS[$random_index]}
+        for ((i=0; i<num_captures; i++)); do
+            # Sélectionner un pokemon aléatoire
+            random_index=$((RANDOM % ${#POKEMON_IDS[@]}))
+            pokemon_id=${POKEMON_IDS[$random_index]}
 
-        response=$(post_request "/caught-pokemons" "{\"trainerId\":$trainer_id,\"pokemonId\":$pokemon_id}" "$COOKIE_FILE")
-        capture_id=$(extract_id "$response")
+            response=$(post_request "/caught-pokemons" "{\"trainerId\":$trainer_id,\"pokemonId\":$pokemon_id}" "$COOKIE_FILE")
+            capture_id=$(extract_id "$response")
 
-        if [ ! -z "$capture_id" ]; then
-            CAPTURE_COUNT=$((CAPTURE_COUNT + 1))
-        fi
+            if [ ! -z "$capture_id" ]; then
+                CAPTURE_COUNT=$((CAPTURE_COUNT + 1))
+            fi
+        done
     done
-done
-
-echo "  ✓ $CAPTURE_COUNT captures créées"
+    echo "  ✓ $CAPTURE_COUNT captures créées"
+fi
 
 echo ""
 echo "✅ Remplissage terminé !"

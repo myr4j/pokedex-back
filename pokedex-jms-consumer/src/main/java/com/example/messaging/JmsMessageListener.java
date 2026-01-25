@@ -70,8 +70,8 @@ public class JmsMessageListener {
             logger.info("Jms message listener initialized successfully. waiting for messages on queues: " + CAPTURES_QUEUE + " and " + TRAINERS_QUEUE);
             
         } catch (Exception e) {
-            logger.log(Level.ERROR, "Unable to connect to artemis (" + BROKER_URL + "). application will continue without jms. Error: " + e.getMessage());
-            logger.log(Level.ERROR, "Jms connection error details", e);
+            logger.log(Level.SEVERE, "Unable to connect to artemis (" + BROKER_URL + "). application will continue without jms. Error: " + e.getMessage());
+            logger.log(Level.SEVERE, "Jms connection error details", e);
         }
     }
 

@@ -4,6 +4,7 @@ import com.example.domain.Trainer;
 import com.example.dto.AuthResponse;
 import com.example.dto.LoginRequest;
 import com.example.dto.RegisterRequest;
+import com.example.messaging.TrainerMessageProducer;
 import com.example.service.AuthService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
@@ -25,6 +26,9 @@ class AuthResourceTest {
     private AuthService authService;
 
     @Mock
+    private TrainerMessageProducer trainerMessageProducer;
+
+    @Mock
     private HttpServletRequest httpRequest;
 
     @Mock
@@ -41,6 +45,7 @@ class AuthResourceTest {
         trainer.setId(1L);
 
         when(authService.register("Ash", "ash@pokemon.com", "pikachu123")).thenReturn(trainer);
+        doNothing().when(trainerMessageProducer).sendTrainerCreatedMessage(any());
 
         // when
         Response response = authResource.register(request);
@@ -54,6 +59,7 @@ class AuthResourceTest {
         assertEquals("Ash", body.getName());
 
         verify(authService, times(1)).register("Ash", "ash@pokemon.com", "pikachu123");
+        verify(trainerMessageProducer, times(1)).sendTrainerCreatedMessage(any());
     }
 
     @Test
