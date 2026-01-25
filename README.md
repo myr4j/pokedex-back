@@ -17,13 +17,24 @@ REST API for managing a Pokedex.
 - **PostgreSQL** : Database
 - **ActiveMQ Artemis** : Message broker (JMS)
 
+## Documentation
+
+Pour plus de détails sur le projet, consultez la [documentation complète](./documentation/) qui contient :
+- Problématique et fonctionnalités métier
+- Architecture et design patterns
+- Scénario d'utilisation complet illustrant le flux REST → EJB → JPA → JMS →
+consommateur
+- Documentation technique
+- Diagrammes de composants et de séquence
+- Contributions individuelles
+
 
 ### 1. Start services (PostgreSQL + Artemis)
 ```bash
 docker compose up -d
 ```
 
-### 2. Run the application
+### 2. Run the main application
 ```bash
 mvn clean package
 mvn embedded-glassfish:run
@@ -31,9 +42,22 @@ mvn embedded-glassfish:run
 
 API is available at: `http://localhost:8080/api`
 
-### 3. Populate database (optional)
+### 3. Run the JMS Consumer
+In a separate terminal, launch the JMS consumer module:
+
 ```bash
-./populate-db.sh 
+cd pokedex-jms-consumer
+mvn clean package -DskipTests
+mvn embedded-glassfish:run
+```
+
+Consumer API is available at: `http://localhost:8081/api`
+
+The consumer listens to JMS queues and processes capture and trainer creation messages. See `pokedex-jms-consumer/README.md` for more details.
+
+### 4. Populate database (optional)
+```bash
+./populate-db.sh http://localhost:8080/api
 ```
 
 ## Features
@@ -77,6 +101,17 @@ API is available at: `http://localhost:8080/api`
 - **GET** `/api/caught-pokemons/pokemon/{pokemonId}` - Get trainers who caught a pokemon
 - **DELETE** `/api/caught-pokemons/{id}` - Delete a capture
 
+### JMS Consumer API (port 8081)
+The JMS consumer module provides additional endpoints for viewing processed messages:
+- **GET** `/api/captures` - List all capture messages
+- **GET** `/api/captures/recent?limit=N` - Get recent capture messages (default: 10, max: 100)
+- **GET** `/api/captures/stats` - Get capture statistics
+- **GET** `/api/creations` - List all trainer creation messages
+- **GET** `/api/creations/recent?limit=N` - Get recent trainer creation messages (default: 10, max: 100)
+- **GET** `/api/creations/stats` - Get trainer creation statistics
+- **GET** `/api/aggregated/stats` - Get aggregated statistics for all trainers
+- **GET** `/api/aggregated/stats/trainer/{trainerId}` - Get aggregated statistics for a specific trainer
+- **GET** `/api/health` - Health check endpoint
 
 **Usage example:**
 ```bash

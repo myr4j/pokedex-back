@@ -9,7 +9,7 @@ import jakarta.ws.rs.core.Response;
 
 import java.util.List;
 
-// endpoint rest pour les statistiques agregees (pattern aggregator)
+
 @Path("/aggregated")
 @Produces(MediaType.APPLICATION_JSON)
 public class AggregatedStatsResource {
@@ -23,7 +23,6 @@ public class AggregatedStatsResource {
     }
     
     // retourne les statistiques agregees pour tous les trainers
-    // pattern aggregator : regroupe tous les messages de capture en statistiques par trainer
     @GET
     @Path("/stats")
     public Response getAllAggregatedStats() {

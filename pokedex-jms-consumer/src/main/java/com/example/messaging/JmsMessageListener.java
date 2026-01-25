@@ -32,7 +32,7 @@ public class JmsMessageListener {
     
     @PostConstruct
     public void init() {
-        logger.info("initializing jms message listener...");
+        logger.info("Initializing jms message listener...");
         connect();
     }
     
@@ -67,11 +67,11 @@ public class JmsMessageListener {
                 }
             });
             
-            logger.info("jms message listener initialized successfully. waiting for messages on queues: " + CAPTURES_QUEUE + " and " + TRAINERS_QUEUE);
+            logger.info("Jms message listener initialized successfully. waiting for messages on queues: " + CAPTURES_QUEUE + " and " + TRAINERS_QUEUE);
             
         } catch (Exception e) {
-            logger.log(Level.WARNING, "unable to connect to artemis (" + BROKER_URL + "). application will continue without jms. error: " + e.getMessage());
-            logger.log(Level.FINE, "jms connection error details", e);
+            logger.log(Level.ERROR, "Unable to connect to artemis (" + BROKER_URL + "). application will continue without jms. Error: " + e.getMessage());
+            logger.log(Level.ERROR, "Jms connection error details", e);
         }
     }
 
@@ -110,7 +110,7 @@ public class JmsMessageListener {
                         CaptureMessage captureMessage = (CaptureMessage) obj;
                         
                         logger.info(String.format(
-                            "capture message received (bytes) - trainer: %s (id: %d) caught %s (id: %d)",
+                            "Capture message received (bytes) - trainer: %s (id: %d) caught %s (id: %d)",
                             captureMessage.getTrainerName(),
                             captureMessage.getTrainerId(),
                             captureMessage.getPokemonName(),
@@ -121,11 +121,11 @@ public class JmsMessageListener {
                     }
                 }
             } else {
-                logger.warning("unsupported message type: " + message.getClass().getName());
+                logger.warning("Unsupported message type: " + message.getClass().getName());
             }
             
         } catch (Exception e) {
-            logger.log(Level.SEVERE, "error processing jms capture message", e);
+            logger.log(Level.SEVERE, "Error processing jms capture message", e);
         }
     }
     
@@ -140,7 +140,7 @@ public class JmsMessageListener {
                     
                     // log le message de creation de trainer
                     logger.info(String.format(
-                        "trainer created - %s (id: %d, email: %s) on %s",
+                        "Trainer created - %s (id: %d, email: %s) on %s",
                         trainerMessage.getTrainerName(),
                         trainerMessage.getTrainerId(),
                         trainerMessage.getTrainerEmail(),
@@ -150,7 +150,7 @@ public class JmsMessageListener {
                     MessageLogService.getInstance().addTrainerMessage(trainerMessage);
                     
                 } else {
-                    logger.warning("trainer message received but unexpected type: " + obj.getClass().getName());
+                    logger.warning("Trainer message received but unexpected type: " + obj.getClass().getName());
                 }
             } else if (message instanceof BytesMessage) {
                 BytesMessage bytesMessage = (BytesMessage) message;
@@ -163,7 +163,7 @@ public class JmsMessageListener {
                         TrainerMessage trainerMessage = (TrainerMessage) obj;
                         
                         logger.info(String.format(
-                            "trainer created (bytes) - %s (id: %d, email: %s)",
+                            "Trainer created (bytes) - %s (id: %d, email: %s)",
                             trainerMessage.getTrainerName(),
                             trainerMessage.getTrainerId(),
                             trainerMessage.getTrainerEmail()
@@ -173,18 +173,18 @@ public class JmsMessageListener {
                     }
                 }
             } else {
-                logger.warning("unsupported message type: " + message.getClass().getName());
+                logger.warning("Unsupported message type: " + message.getClass().getName());
             }
             
         } catch (Exception e) {
-            logger.log(Level.SEVERE, "error processing jms trainer message", e);
+            logger.log(Level.SEVERE, "Error processing jms trainer message", e);
         }
     }
     
     @PreDestroy
     public void cleanup() {
         try {
-            logger.info("cleaning up jms message listener...");
+            logger.info("Cleaning up jms message listener...");
             
             if (capturesConsumer != null) {
                 capturesConsumer.close();
@@ -199,10 +199,10 @@ public class JmsMessageListener {
                 connection.close();
             }
             
-            logger.info("jms message listener cleaned up successfully");
+            logger.info("Jms message listener cleaned up successfully");
             
         } catch (Exception e) {
-            logger.log(Level.SEVERE, "error cleaning up jms message listener", e);
+            logger.log(Level.SEVERE, "Error cleaning up jms message listener", e);
         }
     }
 }
