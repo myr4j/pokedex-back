@@ -19,14 +19,8 @@ REST API for managing a Pokedex.
 
 ## Documentation
 
-Pour plus de détails sur le projet, consultez la [documentation complète](./documentation/) qui contient :
-- Problématique et fonctionnalités métier
-- Architecture et design patterns
-- Scénario d'utilisation complet illustrant le flux REST → EJB → JPA → JMS →
-consommateur
-- Documentation technique
-- Diagrammes de composants et de séquence
-- Contributions individuelles
+For full documentation, refer to [documentation](./documentation/).
+- 
 
 
 ### 1. Start services (PostgreSQL + Artemis)
