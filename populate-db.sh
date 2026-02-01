@@ -33,7 +33,7 @@ post_request() {
         -H "Content-Type: application/json" \
         -b "$cookie_file" -c "$cookie_file" \
         -d "$data")
-    local body=$(echo "$response" | head -n -1)
+    local body=$(echo "$response" | sed '$d')
     local status=$(echo "$response" | tail -n 1)
     echo "$body"
     return $status
