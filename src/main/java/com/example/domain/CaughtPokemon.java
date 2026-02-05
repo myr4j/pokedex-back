@@ -37,6 +37,15 @@ public class CaughtPokemon {
         this.pokemon = pokemon;
         this.captureDate = LocalDateTime.now();
     }
+
+    // Getters pour exposer les IDs dans le JSON (sans créer de référence circulaire)
+    public Long getPokemonId() {
+        return pokemon != null ? pokemon.getId() : null;
+    }
+
+    public Long getTrainerId() {
+        return trainer != null ? trainer.getId() : null;
+    }
 }
 
 
